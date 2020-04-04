@@ -1,22 +1,29 @@
-import { Controller, Get, Post, Param, Body, Query, Put, Delete, ForbiddenException, UseFilters, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, Put, Delete, ForbiddenException, UseFilters, UsePipes, UseGuards, SetMetadata, UseInterceptors } from '@nestjs/common';
 import { CreateCatDTO, ListAllEntities, UpdateCatDTO } from './dto';
 import { CatsService } from './cats.service';
 import { Cat } from './interfaces/cat.interface';
 import { HttpExceptionFilter } from 'src/http-exception.filter';
 import { ValidationPipe } from 'src/validation.pipe';
 import { ParseIntPipe } from 'src/parse-int.pipe';
+import { Roles } from 'src/roles.decorator';
+import { LoggingInterceptor } from 'src/logging.interceptor';
+import { TransformInterceptor } from 'src/transform.interceptor';
 
 @Controller('cats')
+@Roles('admin')
+@UseInterceptors(LoggingInterceptor)
 export class CatsController {
     constructor(private catService: CatsService) {}
 
     @Post()
     @UsePipes(ValidationPipe)
+    @SetMetadata('roles', ['admin'])
     async create(@Body() createCatDTO: CreateCatDTO) {
         this.catService.create(createCatDTO);
     }
 
     @Get()
+    @UseInterceptors(TransformInterceptor)
     async findAll(@Query() query: ListAllEntities): Promise<Cat[]> {
         return this.catService.finalAll();
     }
